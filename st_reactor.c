@@ -8,8 +8,9 @@
 bool isRunning = true;
 
 Reactor* createReactor() {
+    
     Reactor* r = (Reactor*)malloc(sizeof(Reactor));
-    r->event_count = 0;
+    r->event_count = 1;
     r->size = 5;
     r->fds = (struct pollfd*)malloc((sizeof(struct pollfd))*(r->size));
     r->events = (Event*)malloc(sizeof(Event)*(r->size));
@@ -31,7 +32,7 @@ void destroyReactor(Reactor* reactor) {
    to the reactor */ 
 void addFd(Reactor* reactor, int fd, handler_t handler) {
     
-    if(reactor->event_count == reactor->size) { // In case the reactor is full
+    if(reactor->event_count - 1 == reactor->size) { // In case the reactor is full
         reactor->size *= 2; // Double it
         reactor->events = realloc(reactor->events, sizeof(Event)*reactor->size); // More memory for events
         reactor->fds = realloc(reactor->fds, sizeof(struct pollfd)*reactor->size); // More memory for fds
@@ -40,19 +41,19 @@ void addFd(Reactor* reactor, int fd, handler_t handler) {
     Event event;
     event.fd = fd;
     event.handler = handler;
-    reactor->events[reactor->event_count] = event;
+    reactor->events[reactor->event_count - 1] = event;
     
     // Adds the file descriptor
-    reactor->fds[reactor->event_count].fd = fd;
-    reactor->fds[reactor->event_count].events = POLLIN;
+    reactor->fds[reactor->event_count - 1].fd = fd;
+    reactor->fds[reactor->event_count - 1].events = POLLIN;
     
     reactor->event_count++;
-
+    
 }
 
 // Finds the indes ot the file descriptor in the reactor
 int findFd(Reactor *reactor, int fd) {
-    for(int i = 0; i < reactor->event_count; i++) {
+    for(int i = 0; i < reactor->event_count - 1; i++) {
         if(reactor->fds[i].fd == fd) // Found
             return i;
     }
@@ -78,17 +79,18 @@ void deleteFd(Reactor* reactor, int fd) {
 void *reactorThread(Reactor* reactor) {
     // Runs the Reactor event loop
     while (isRunning) {
+        
         int num_ready = poll(reactor->fds, reactor->event_count, -1);
         if (num_ready < 0) {
             perror("poll");
             exit(1);
         }
         
-        /* Checks which file descriptors have activity and calls their handlers
-        for (int i = 0; i < reactor->event_count; i++) {
+        // Checks which file descriptors have activity and calls their handlers
+        for (int i = 0; i < reactor->event_count - 1; i++) {
             if (reactor->fds[i].revents & POLLIN)
                 reactor->events[i].handler(reactor, reactor->events[i].fd);
-        }*/
+        }
     }  
 }
 

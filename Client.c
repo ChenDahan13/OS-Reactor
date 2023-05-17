@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 			numbytes = recv (sockfd, buf, MAXDATASIZE-1,0);
 			if(numbytes <= 0) break; // Error or connection closed
 			buf[numbytes] = 0;
-			printf ("Server:%s\n",buf);
+			printf ("Server: %s\n",buf);
 		}
 	}
 	close(sockfd);
